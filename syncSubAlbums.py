@@ -5,52 +5,55 @@ import MySQLdb
 
 def moveimg():
     os.system("cd /opt/unsort && find . -type f | sed -e 's/.//' | sed -e  's/.//;'"
-          "> /home/demerzel/PycharmProjects/screencast/filetmp.txt")
+          "> /tmp/filetmp.txt")
 
 
-    f = open('/home/demerzel/PycharmProjects/screencast/filetmp.txt')
+    f = open('/tmp/filetmp.txt')
 
     for line in f.read().splitlines():
         a = line.split('-')
-        image = "/opt/unsort/%s" %line
-        folder = "/opt/albums/%s/%s/%s/" % (a[0], a[1],a[2])
-        if not os.path.exists(folder):
-            mysqlconn(a[1],a[2])
-            os.makedirs(folder)
+        src = "/opt/unsort/"
+	image = line
+        dst = "/opt/albums/%s/%s/%s/" % (a[0], a[1],a[2])
+	if not os.path.exists(dst):
+           os.makedirs(dst)
+	   mysqlconn(a[0],a[1],a[2])
         else:
-            shutil.move(image, folder)
+            shutil.move(os.path.join(src, image), os.path.join(dst, image))
     sync()
 
 def sync():
     os.system("cd /opt/albums/ && find . -type d -maxdepth 2 | sed -e 's/.//' | "
-          "grep [^'/PC'1-90] > /home/demerzel/PycharmProjects/screencast/path.txt")
+          "grep [^'/PC'1-90] > /tmp/path.txt")
 
 
-    f = open('/home/demerzel/PycharmProjects/screencast/path.txt')
+    f = open('/tmp/path.txt')
     for line in f.read().splitlines():
         print (line)
-        comm = "cd /home/demerzel/lycheesync && python3 -m lycheesync.sync /opt/albums%s /srv/www/htdocs/ ressources/conf.json" % line
+	print ("/opt/albums%s") % line
+        comm = "cd /opt/lycheesync && python3 -m lycheesync.sync /opt/albums%s /var/www/html/screencast ressources/conf.json" % line
         print (comm)
         os.system(comm)
 
 
-def mysqlconn(name,new):
-    db = MySQLdb.connect(host='localhost', user='root', passwd='rl451kme9m', db='screen')
-
+def mysqlconn(parent,name,new):
+    db = MySQLdb.connect(host='localhost', user='root', passwd='|J1xcGC~jEF*', db='screencastprestige')
+    
     cursor = db.cursor()
 
-    cursor.execute('select id from lychee_albums where title="%s";' % name)
+    cursor.execute('select id from lychee_albums where title="%s";' % parent)    
+    result = cursor.fetchall()
+    print result
+    for record in result:
+        par = record[0]
+
+    cursor.execute('select id from lychee_albums where title="%s" AND parent=%s;' % (name,par))
 
     result = cursor.fetchall()
     print result
     for record in result:
         ids = record[0]
 
-    cursor.execute('Select max(id) from lychee_albums;')
+    cursor.execute('insert into lychee_albums (title,sysstamp,parent) VALUE ("%s",14012018,%s);' % (new, ids))
 
-    result = cursor.fetchall()
-    for record in result:
-        max_id = record[0]
-
-    cursor.execute('insert into lychee_albums (id,title,sysstamp,parent) VALUE (%s,"%s",14012018,%s);' % (max_id + 1, new, ids))
 moveimg()
