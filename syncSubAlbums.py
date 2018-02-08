@@ -37,7 +37,7 @@ def sync():
 
 
 def mysqlconn(parent,name,new):
-    db = MySQLdb.connect(host='localhost', user='root', passwd='|J1xcGC~jEF*', db='screencastprestige')
+    db = MySQLdb.connect(host='localhost', user='root', passwd='*', db='screencastprestige')
     
     cursor = db.cursor()
 
